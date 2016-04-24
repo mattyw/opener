@@ -1,5 +1,6 @@
-import Text.Regex.Posix ((=~))
 import Text.Regex
+import System.Process
+import System.Exit
 
 example = ["hello there", "   Failed on foobar:127", "some more", "blahblah.go:1345"]
 
@@ -19,8 +20,12 @@ findAndFilter :: [String] -> [Maybe [String]]
 findAndFilter ls = filterMatches (findMatches ls)
 
 toVim :: [String] -> String
-toVim (a:b:xs) = "+" ++ b ++ " " ++ a
+toVim (a:b:xs) = "vim +" ++ b ++ " " ++ a
 
 getFilename ls = fmap toVim (head (findAndFilter ls))
 
-main = putStrLn (show (getFilename example))
+vimOpen :: Maybe String -> IO ExitCode
+vimOpen Nothing = error "need something to open"
+vimOpen (Just cmd) = system cmd
+
+main = vimOpen (getFilename example)
