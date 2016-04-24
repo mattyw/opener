@@ -15,6 +15,12 @@ filterer :: Maybe [String] -> Bool
 filterer Nothing = False
 filterer (Just x) = True
 
+findAndFilter :: [String] -> [Maybe [String]]
 findAndFilter ls = filterMatches (findMatches ls)
 
-main = putStrLn (show (findAndFilter example))
+toVim :: [String] -> String
+toVim (a:b:xs) = "+" ++ b ++ " " ++ a
+
+getFilename ls = fmap toVim (head (findAndFilter ls))
+
+main = putStrLn (show (getFilename example))
