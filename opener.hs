@@ -1,13 +1,14 @@
 -- The opener reads from stdin and looks for the last item that looks like
 -- filename:linenumber and attempts to get vim to open it.
 -- vim should have been run using a command such as vim --servername vim
+-- TODO: Output a list of filename that could be opened with gF in vim
 import Text.Regex
 import System.Process
 import System.Exit
 
 example = ["hello there", "   Failed on foobar:127", "some more", "blahblah.go:1345"]
 
-fileRegex = mkRegex "(\\S+):([0-9]+)"
+fileRegex = mkRegex "^(\\S+):([0-9]+)"
 
 findMatches :: [String] -> [Maybe [String]]
 findMatches ls = map (\x -> matchRegex fileRegex x) ls
@@ -34,4 +35,8 @@ vimOpen (Just cmd) = system cmd
 main = do
     inp <- getContents
     let ls = lines inp
-    vimOpen (getFilename ls)
+    putStrLn (show (findAndFilter ls))
+    let filename = getFilename ls
+    putStrLn (show filename)
+    putStrLn inp
+    vimOpen filename
