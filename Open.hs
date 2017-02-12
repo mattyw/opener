@@ -2,6 +2,7 @@ import Text.ParserCombinators.Parsec
 import System.Environment
 import System.Process
 import System.Exit
+import System.IO
 
 isFilename :: String -> Maybe (String, String)
 isFilename = undefined
@@ -9,7 +10,7 @@ isFilename = undefined
 data FileName = FN String String deriving Show
 
 fileNamePart:: Parser String
-fileNamePart = many1 $ oneOf "&ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-+."
+fileNamePart = many1 $ oneOf "&\\/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-+."
 
 fileNumberPart :: Parser String
 fileNumberPart = many1 $ oneOf "1234567890"
@@ -23,7 +24,15 @@ filename = do
 
 parseFileName :: String -> Either ParseError FileName
 parseFileName = parse filename "(none found)"
-usage = "must specify filename"
+
+findFileName :: [String] -> Either ParseError FileName
+findFileName [] = error "nothing"
+findFileName (x: xs) = case parseFileName x of
+    Left x -> findFileName xs
+    Right x -> Right x
+
+parseText :: String -> Either ParseError FileName
+parseText inp = findFileName (words inp)
 
 toVim :: FileName -> String
 toVim (FN name line) = "vim --remote +" ++ line ++ " " ++ name
@@ -33,7 +42,11 @@ vimOpen (Left _) = exitWith (ExitFailure 1)
 vimOpen (Right cmd) = system $ toVim cmd
 
 run :: [String] -> IO a
-run [] = putStrLn usage >> exitWith (ExitFailure 1)
+run [] = do
+    hPutStrLn stderr "Reading from Stdin"
+    inp <- getContents
+    vimOpen (parseText inp)
+    exitWith ExitSuccess
 run (x:_) = do
     let fn = parseFileName x
     vimOpen fn
